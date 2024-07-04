@@ -49,6 +49,7 @@ public:
 	}
 
 	static void Release() {
+		//안전 삭제
 		if (m_pSingleObject != nullptr) {
 			delete m_pSingleObject;
 			m_pSingleObject = nullptr;
