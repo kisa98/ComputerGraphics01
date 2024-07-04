@@ -7,6 +7,7 @@ enum class UnitType {
 	Firebat
 };
 
+//지휘관(ICommander)의 명령을 받는 유닛(옵저버)들
 class IUnit {
 protected:
 	float m_posX = 0;
@@ -18,10 +19,14 @@ public:
 	virtual void move(float x, float y) = 0;
 };
 
+//유닛(옵저버)들의 구현(=구체화) 클래스
 class BionicUnit : public IUnit {
 
 public:
-	BionicUnit() = delete;
+	BionicUnit() = delete; //유닛의 고유 번호와 타입은 반드시 설정해야함. 따라서 기본 생성자는 허용하지 않음.
+
+	//다음처럼 구현을 강제하고 싶지만, 생성자는 가상화할 수 없음. 따라서 다른 방법을 찾아야함.
+	//생성자를 가상화할 수 없는 것은 가상 함수 테이블 때문.
 	BionicUnit(size_t unitId, UnitType type) {
 		m_unitId = unitId;
 		switch (type)
@@ -49,6 +54,7 @@ public:
 
 };
 
+//명령의 주체로 보통 Subject라고 표현함. 여기서는 유닛을 지휘하는 주체이므로 Commander로 명명
 class ICommander {
 public:
 	virtual void selectUnit(IUnit* unit) = 0;
@@ -56,10 +62,14 @@ public:
 	virtual void move(float x, float y) = 0;
 };
 
+//지휘관 중 대장이라는 컨셉.
 class Captain : public ICommander {
 	
 private:
+	//싱글톤 기법으로 사용할 것이므로 정적 멤버로 객체 선언.
 	static Captain* m_captain;
+
+	//벡터에 유닛 포인터 저장. 포인터로 저장하면 객체를 복사하여 저장할 필요가 없음
 	static std::vector<IUnit*> m_units;
 	Captain() {
 		std::cout << "[ Captain has been Operated. ]" << std::endl;
@@ -69,6 +79,7 @@ private:
 		std::cout << "[ Captain has been Unoperated. ]" << std::endl;
 	}
 public:
+	//정적 실체화 객체를 받는 함수.
 	static Captain* getInstance() {
 		if (m_captain == nullptr) {
 			m_captain = new Captain();
@@ -76,6 +87,7 @@ public:
 		return m_captain;
 	}
 
+	//실체화된 객체를 해제하는 함수. 안전 삭제가 적용되어 있음.
 	static void Release() {
 		if (m_captain != nullptr) {
 			delete m_captain;
@@ -83,6 +95,10 @@ public:
 		}
 	}
 
+	//순수 가상(추상) 함수와 그 구현 함수가 static일 수 없는 이유?
+	//static 함수는 특정 객체 인스턴스에 속하지 않고, 클래스 이름으로 호출됨
+	//따라서 static 함수는 클래스 단계에서 동작하여, 특정 객체의 상태와 무관함.
+	//덤으로 추상 함수는 추상 함수 테이블에서 관리되나, static 함수는 객체 인스턴스와 무관함.	
 	void selectUnit(IUnit* unit) override {
 		std::cout << "= Unit " << unit->m_name << "(" << unit->m_unitId << ") is Selected. =" << std::endl;
 		m_units.push_back(unit);
@@ -126,7 +142,8 @@ int main() {
 
 	me->move(100, 100);
 
-	me->deSelectUnit(unit1);
+//	me->deSelectUnit(unit1);
+	Captain::getInstance()->deSelectUnit(unit1);
 
 	me->move(25, 25);
 
